@@ -3,8 +3,6 @@
  * @template {string} T
  */
 export class EventEmitterExt<T extends string> {
-    /** @type {Map.<string, Set<number>>} */
-    events: Map<string, Set<number>>;
     /** @type {boolean} */
     autoRegister: boolean;
     /**
@@ -67,6 +65,24 @@ export class EventEmitterExt<T extends string> {
      * @param {Function} listener
      */
     off(event: T, listener: Function): void;
+    /**
+     * Check if an event is registered with the event emitter
+     * @param {T} event
+     * @returns {boolean}
+     */
+    hasEvent(event: T): boolean;
+    /**
+     * Check if there are any listeners registered for a specific event
+     * @param {T} event - The event to check for listeners
+     * @returns {boolean} - Returns true if there are listeners for the event, false otherwise
+     */
+    hasListeners(event: T): boolean;
+    /**
+     * Get the number of listeners registered for a specific event
+     * @param {T} event - The event to get the number of listeners for
+     * @returns {number} - The number of listeners for the event
+     */
+    getNumberOfListeners(event: T): number;
     /**
      * emit is used to trigger an event
      * @param {T} event

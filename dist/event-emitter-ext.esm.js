@@ -7,7 +7,7 @@
 class EventEmitterExt {
 
     /** @type {Map.<string, Set<number>>} */
-    events = new Map;
+    #events = new Map;
 
     #muted = false;
 
@@ -67,7 +67,7 @@ class EventEmitterExt {
      */
     #attachListenerToEvent(event, listener_id) {
 
-        let listeners = this.events.get(event);
+        let listeners = this.#events.get(event);
 
         if (listeners === undefined) {
             return;
@@ -92,7 +92,7 @@ class EventEmitterExt {
      * @returns 
      */
     #detachListenerFromEvent(event, listener_id) {
-        let listeners = this.events.get(event);
+        let listeners = this.#events.get(event);
 
         if (listeners === undefined) {
             return;
@@ -169,7 +169,7 @@ class EventEmitterExt {
         /** @type {Set<number>} */
         let usedListeners = new Set();
 
-        this.events.forEach((listeners, event) => {
+        this.#events.forEach((listeners, event) => {
 
             if (this.#scheduledEvents.has(event)) {
                 let args = this.#scheduledEvents.get(event) || [];
@@ -202,8 +202,8 @@ class EventEmitterExt {
      */
     registerEvents(...events) {
         events.forEach((event) => {
-            if (!this.events.has(event)) {
-                this.events.set(event, new Set());
+            if (!this.#events.has(event)) {
+                this.#events.set(event, new Set());
             }
         });
     }
@@ -215,25 +215,25 @@ class EventEmitterExt {
     unregisterEvents(...events) {
         events.forEach((event) => {
 
-            if (!this.events.has(event)) {
+            if (!this.#events.has(event)) {
                 return;
             }
 
-            let listeners = this.events.get(event);
+            let listeners = this.#events.get(event);
 
             if (listeners) {
                 listeners.forEach((listener_id) => {
                     this.#detachListenerFromEvent(event, listener_id);
                 });
 
-                this.events.delete(event);
+                this.#events.delete(event);
             }
 
         });
     }
 
     unregisterAllEvents() {
-        this.events.clear();
+        this.#events.clear();
         this.#listeners.clear();
         this.#listenersCountData.clear();
         this.#scheduledEvents.clear();
@@ -251,7 +251,7 @@ class EventEmitterExt {
 
         if (this.autoRegister == false) {
 
-            if (!this.events.has(event)) {
+            if (!this.#events.has(event)) {
                 return emptyFunction;
             }
 
@@ -298,7 +298,7 @@ class EventEmitterExt {
      * @param {Function} listener
      */
     removeListener(event, listener) {
-        if (!this.events.has(event)) {
+        if (!this.#events.has(event)) {
             return;
         }
 
@@ -316,11 +316,11 @@ class EventEmitterExt {
      * @param {T} event
      */
     removeAllListeners(event) {
-        if (!this.events.has(event)) {
+        if (!this.#events.has(event)) {
             return;
         }
 
-        this.events.get(event).forEach((listener_id) => {
+        this.#events.get(event).forEach((listener_id) => {
             this.#detachListenerFromEvent(event, listener_id);
         });
     }
@@ -335,12 +335,44 @@ class EventEmitterExt {
     }
 
     /**
+     * Check if an event is registered with the event emitter
+     * @param {T} event
+     * @returns {boolean}
+     */
+    hasEvent(event) {
+        return this.#events.has(event);
+    }
+
+    /**
+     * Check if there are any listeners registered for a specific event
+     * @param {T} event - The event to check for listeners
+     * @returns {boolean} - Returns true if there are listeners for the event, false otherwise
+     */
+    hasListeners(event) {
+        return this.#events.has(event) && this.#events.get(event).size > 0;
+    }
+
+    /**
+     * Get the number of listeners registered for a specific event
+     * @param {T} event - The event to get the number of listeners for
+     * @returns {number} - The number of listeners for the event
+     */
+    getNumberOfListeners(event) {
+        let eventData = this.#events.get(event);
+        if (eventData === undefined) {
+            return 0;
+        }
+
+        return eventData.size;
+    }
+
+    /**
      * emit is used to trigger an event
      * @param {T} event
      * @param {any[]} args
      */
     emit(event, ...args) {
-        if (!this.events.has(event)) {
+        if (!this.#events.has(event)) {
             return;
         }
 
@@ -359,7 +391,7 @@ class EventEmitterExt {
      */
     #emit(event, ...args) {
 
-        let listeners = this.events.get(event);
+        let listeners = this.#events.get(event);
 
         if (listeners === undefined) {
             return;
@@ -391,7 +423,7 @@ class EventEmitterExt {
      * @param {any[]} args - Arguments to pass to the event listeners
      */
     emitMany(events, ...args) {
-        this.events.forEach((listeners, event) => {
+        this.#events.forEach((listeners, event) => {
             let ev = /** @type {T} */ (event);
             if (events.includes(ev)) {
                 this.emit(ev, ...args);
