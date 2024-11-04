@@ -15,6 +15,7 @@ $ npm install @supercat1337/event-emitter-ext
 ### Methods
  - registerEvents(...events) - Register events to be emitted. This should be called before any other methods on this class. The order of the events in the `events` array determines the order in which the event listeners are triggered. This method can be called multiple times to register multiple events.
  - unregisterEvents(...events) - Unregister events from being emitted. If the event is not already registered, this has no effect.
+ - unregisterAllEvents() - Remove all event listeners from all events that have been registered.
  - on(event, listener) - Add a callback function that's going to be executed when the event is triggered. Returns a function that can be used to unsubscribe from the event
  - once(event, listener) - Add a callback function that's going to be executed only once when the event is triggered. Returns a function that can be used to unsubscribe from the event
  - onAny(events, listener) - Add a callback function that's going to be executed when any of the specified events are triggered. Returns a function that can be used to unsubscribe from the events.
@@ -27,6 +28,8 @@ $ npm install @supercat1337/event-emitter-ext
  - mute() - Mute the event emitter, preventing events from being triggered.
  - unmute() - Unmute the event emitter, allowing events to be triggered.
  - isMuted() - Check if the event emitter is muted.
+ - removeAllListeners(event) - Remove all event listeners from an event
+
 
 ### Properties
  - events - The events registered with the event emitter. The keys are the event names, and the values are arrays of listener IDs.

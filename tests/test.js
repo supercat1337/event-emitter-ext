@@ -542,5 +542,41 @@ test("emitMany()", t => {
     } else {
         t.fail()
     }
-}); 
+});
 
+test("unregisterAllEvents()", t => {
+    /** @type {EventEmitterExt<"foo">} */
+    var ev = new EventEmitterExt;
+    ev.registerEvents("foo");
+    ev.unregisterAllEvents();
+
+    if (ev.events.has("foo")) {
+        t.fail();
+    } else {
+        t.pass();
+    }
+});
+
+test("removeAllListeners()", t => {
+    /** @type {EventEmitterExt<"foo">} */
+    var ev = new EventEmitterExt;
+    ev.registerEvents("foo");
+
+    var foo = 0;
+    var action = () => {
+        foo++;
+    };
+
+    ev.on("foo", action);
+
+    ev.removeAllListeners("foo");
+
+    ev.emit("foo");
+
+    if (foo == 0) {
+        t.pass();
+
+    } else {
+        t.fail()
+    }
+});

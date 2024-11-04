@@ -232,6 +232,13 @@ class EventEmitterExt {
         });
     }
 
+    unregisterAllEvents() {
+        this.events.clear();
+        this.#listeners.clear();
+        this.#listenersCountData.clear();
+        this.#scheduledEvents.clear();
+    }
+
     /**
      * on is used to add a callback function that's going to be executed when the event is triggered
      * @param {T} event
@@ -302,6 +309,20 @@ class EventEmitterExt {
         }
 
         this.#detachListenerFromEvent(event, listener_id);
+    }
+
+    /**
+     * Remove all event listeners from an event
+     * @param {T} event
+     */
+    removeAllListeners(event) {
+        if (!this.events.has(event)) {
+            return;
+        }
+
+        this.events.get(event).forEach((listener_id) => {
+            this.#detachListenerFromEvent(event, listener_id);
+        });
     }
 
     /**

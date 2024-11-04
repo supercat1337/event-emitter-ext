@@ -35,6 +35,7 @@ export class EventEmitterExt<T extends string> {
      * @param {T[]} events - Array of events to unregister
      */
     unregisterEvents(...events: T[]): void;
+    unregisterAllEvents(): void;
     /**
      * on is used to add a callback function that's going to be executed when the event is triggered
      * @param {T} event
@@ -55,6 +56,11 @@ export class EventEmitterExt<T extends string> {
      * @param {Function} listener
      */
     removeListener(event: T, listener: Function): void;
+    /**
+     * Remove all event listeners from an event
+     * @param {T} event
+     */
+    removeAllListeners(event: T): void;
     /**
      * Alias for removeListener
      * @param {T} event
