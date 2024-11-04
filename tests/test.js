@@ -29,8 +29,6 @@ test("once(), emit()", t => {
     });
 
     ev.emit("foo");
-    console.log(ev.events);
-
     ev.emit("foo");
     ev.emit("foo");
 
@@ -86,7 +84,7 @@ test("removeListener()", t => {
     ev.emit("foo");
     ev.emit("foo");
 
-    if (foo == 0) {
+    if (foo == 0 && ev.hasListeners("foo") == false) {
         t.pass();
     } else {
         t.fail()
@@ -550,7 +548,7 @@ test("unregisterAllEvents()", t => {
     ev.registerEvents("foo");
     ev.unregisterAllEvents();
 
-    if (ev.events.has("foo")) {
+    if (ev.hasEvent("foo")) {
         t.fail();
     } else {
         t.pass();
@@ -579,4 +577,36 @@ test("removeAllListeners()", t => {
     } else {
         t.fail()
     }
+});
+
+test("getNumberOfListeners()", t => {
+    /** @type {EventEmitterExt<"foo">} */
+    var ev = new EventEmitterExt;
+
+    ev.registerEvents("foo");
+
+    var foo = 0;
+
+    const action = () => {
+        foo++;
+    };
+
+    const action_2 = () => {
+        foo++;
+    };
+
+    ev.on("foo", action);
+    ev.on("foo", action_2);
+
+    if (ev.getNumberOfListeners("foo") != 2) {
+        t.fail();
+    }
+
+    ev.removeAllListeners("foo");
+    if (ev.getNumberOfListeners("foo") != 0) {
+        t.fail();
+    } else {
+        t.pass();
+    }
+
 });

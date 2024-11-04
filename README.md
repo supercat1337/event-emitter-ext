@@ -23,12 +23,15 @@ $ npm install @supercat1337/event-emitter-ext
  - emitMany(events) - Trigger multiple events. All registered listeners will be called with the events as the first argument.
  - removeListener(event, listener) - Remove an event listener.
  - off(event, listener) - Remove an event listener. Shorthand for removeListener.
+ - removeAllListeners(event) - Remove all event listeners from an event.
+ - hasEvent(event) - Check if an event is registered.
+ - hasListeners(event) - Check if an event has any listeners.
+ - getNumberOfListeners(event) - Get the number of listeners registered for a specific event.
  - waitForEvent(event, max_wait_ms = 0) - Wait for an event to be emitted. If max_wait_ms is set to 0, the function will wait indefinitely.
  - waitForAnyEvent(events, max_wait_ms = 0) - Wait for any of the specified events to be emitted. If max_wait_ms is set to 0, the function will wait indefinitely.
  - mute() - Mute the event emitter, preventing events from being triggered.
  - unmute() - Unmute the event emitter, allowing events to be triggered.
  - isMuted() - Check if the event emitter is muted.
- - removeAllListeners(event) - Remove all event listeners from an event
 
 
 ### Properties
