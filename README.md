@@ -1,10 +1,13 @@
 # event-emitter-ext
 
-The EventEmitterExt class appears to be an extension of a typical event emitter, with some additional features. Here are the main differences:
+The EventEmitterExt class is an extension of a typical event emitter, with some additional features. Here are the main differences:
 
-1. Muting: The EventEmitterExt class has a mute() method that allows you to temporarily suppress the emission of events. This is not typically found in standard event emitters.
-2. Event scheduling: When the emitter is muted, events are not discarded, but instead scheduled to be emitted when the emitter is unmuted. This is a unique feature of this class.
-3. Waiting for events: The waitForEvent() and waitForAnyEvent() methods allow you to wait for specific events to be emitted, with optional timeouts. This is not typically found in standard event emitters.
+1. Muting: The EventEmitterExt class has a mute() method that allows you to temporarily suppress the emission of events. 
+2. Event scheduling: When the emitter is muted, events are not discarded, but instead scheduled to be emitted when the emitter is unmuted. 
+3. Waiting for events: The waitForEvent() and waitForAnyEvent() methods allow you to wait for specific events to be emitted, with optional timeouts. 
+4. Batch emission: The emitMany() method allows you to emit multiple events at once. 
+5. Strategy for running listeners: The setListenerRunnerStrategy() method allows you to set the strategy for running listeners. The default strategy is STRATEGY_ORDERED_BY_EVENTS. STRATEGY_ORDERED_BY_EVENTS will iterate over the listeners in the order they were registered. STRATEGY_ORDERED_BY_LISTENER_ID will iterate over the listeners in the order they were registered, grouped by events. 
+6. Listener groups: The onAny() method allows you to group multiple listeners under a single event. 
 
 
 ### Installation
