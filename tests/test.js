@@ -18,6 +18,26 @@ test("on(), emit()", t => {
 
 });
 
+test("on(), emit() with autoRegister = true", t => {
+    /** @type {EventEmitterExt<"foo"|"bar">} */
+    var ev = new EventEmitterExt;
+    ev.autoRegister = true;
+    var foo = 0;
+
+    ev.on("foo", () => {
+        foo++;
+    });
+
+    ev.emit("foo");
+
+    if (foo == 1) {
+        t.pass();
+    } else {
+        t.fail();        
+    }
+});
+
+
 test("once(), emit()", t => {
     /** @type {EventEmitterExt<"foo">} */
     var ev = new EventEmitterExt;
@@ -39,10 +59,78 @@ test("once(), emit()", t => {
     }
 });
 
+test("emit() while listeners are running", t => {
+    /** @type {EventEmitterExt<"foo"|"bar">} */
+    var ev = new EventEmitterExt;
+    ev.registerEvents("bar", "foo");
+    var foo = 0;
+
+    ev.on("foo", () => {
+        ev.emit("foo");
+        foo++;
+    });
+
+    ev.emit("foo");
+
+    if (foo == 0) {
+        t.pass();
+    } else {
+        t.fail()
+    }
+});
+
 test("onAny()", t => {
     /** @type {EventEmitterExt<"foo"|"bar">} */
     var ev = new EventEmitterExt;
     ev.registerEvents("foo", "bar");
+
+    var foo = 0;
+
+    let unsubscriber = ev.onAny(["foo", "bar"], () => {
+        foo++;
+    });
+
+    ev.emit("foo");
+    ev.emit("bar");
+
+    unsubscriber();
+
+    ev.emit("foo");
+
+    if (foo == 2) {
+        t.pass();
+    } else {
+        t.fail()
+    }
+}
+);
+
+test("onAny() with autoRegister = false and no registered events", t => {
+    /** @type {EventEmitterExt<"foo"|"bar">} */
+    var ev = new EventEmitterExt;
+    ev.autoRegister = false;
+
+    var foo = 0;
+
+    let unsubscriber = ev.onAny(["foo"], () => {
+        foo++;
+    });
+
+    ev.emit("foo");
+
+
+    if (foo == 0) {
+        t.pass();
+    } else {
+        t.fail()
+    }
+}
+);
+
+test("onAny() with autoRegister = true", t => {
+    /** @type {EventEmitterExt<"foo"|"bar">} */
+    var ev = new EventEmitterExt;
+    ev.autoRegister = true;
 
     var foo = 0;
 
@@ -487,6 +575,22 @@ test("unregisterEvents()", t => {
     }
 });
 
+test("unregisterEvents() (when unknown event)", t => {
+    /** @type {EventEmitterExt<"foo">} */
+    var ev = new EventEmitterExt;
+
+    // @ts-expect-error
+    ev.unregisterEvents("foo1");
+    
+    // @ts-expect-error
+    if (!ev.hasEvent("foo1")) {
+        t.pass();
+
+    } else {
+        t.fail()
+    }
+});
+
 test("on invalid event", t => {
     /** @type {EventEmitterExt<"foo">} */
 
@@ -520,6 +624,7 @@ test("emitMany()", t => {
     /** @type {EventEmitterExt<"foo"|"bar">} */
     var ev = new EventEmitterExt;
     ev.registerEvents("bar", "foo");
+    ev.setListenerRunnerStrategy(1);
 
     var foo = "a";
     var bar = "b";
@@ -533,9 +638,42 @@ test("emitMany()", t => {
         result += bar;
     });
 
-    ev.emitMany(["foo", "bar"]);
+    // @ts-expect-error
+    ev.emitMany(["foo", "bar", "unknown"]);
 
     if (result == "ba") {
+        t.pass();
+    } else {
+        t.fail()
+    }
+
+    result = "";
+    ev.setListenerRunnerStrategy(0);
+
+    ev.emitMany(["foo", "bar"]);
+
+    if (result == "ab") {
+        t.pass();
+    } else {
+        t.fail()
+    }
+
+});
+
+test("emitMany() while listeners are running", t => {
+    /** @type {EventEmitterExt<"foo"|"bar">} */
+    var ev = new EventEmitterExt;
+    ev.registerEvents("bar", "foo");
+    var foo = 0;
+
+    ev.on("foo", () => {
+        ev.emitMany(["foo"]);
+        foo++;
+    });
+
+    ev.emitMany(["foo"]);
+
+    if (foo == 0) {
         t.pass();
     } else {
         t.fail()
@@ -579,6 +717,32 @@ test("removeAllListeners()", t => {
     }
 });
 
+
+test("removeAllListeners() on unregistered event", t => {
+    /** @type {EventEmitterExt<"foo"|"bar">} */
+    var ev = new EventEmitterExt;
+    ev.registerEvents("bar");
+
+    var foo = 0;
+    var action = () => {
+        foo++;
+    };
+
+    ev.on("foo", action);
+
+    ev.removeAllListeners("foo");
+
+    ev.emit("foo");
+
+    if (foo == 0) {
+        t.pass();
+
+    } else {
+        t.fail()
+    }
+});
+
+
 test("getNumberOfListeners()", t => {
     /** @type {EventEmitterExt<"foo">} */
     var ev = new EventEmitterExt;
@@ -604,6 +768,32 @@ test("getNumberOfListeners()", t => {
 
     ev.removeAllListeners("foo");
     if (ev.getNumberOfListeners("foo") != 0) {
+        t.fail();
+    } else {
+        t.pass();
+    }
+
+});
+
+test("isMuted()", t => {
+    /** @type {EventEmitterExt<"foo">} */
+    var ev = new EventEmitterExt;
+
+    if (ev.isMuted()) {
+        t.fail();
+    } else {
+        t.pass();
+    }
+
+    ev.mute();
+    if (!ev.isMuted()) {
+        t.fail();
+    } else {
+        t.pass();
+    }
+
+    ev.unmute();
+    if (ev.isMuted()) {
         t.fail();
     } else {
         t.pass();

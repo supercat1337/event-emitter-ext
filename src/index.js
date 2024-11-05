@@ -1,6 +1,12 @@
 // @ts-check
 /** @module EventEmitterExt */
 
+
+// STRATEGY_ORDERED_BY_LISTENER_ID  - Iterate over the listeners in the order they were registered .
+// STRATEGY_ORDERED_BY_EVENTS - Iterate over listeners in the order they were registered, grouped by events.
+export const STRATEGY_ORDERED_BY_LISTENER_ID = 0;
+export const STRATEGY_ORDERED_BY_EVENTS = 1;
+
 /**
  * @template {string} T
  */
@@ -24,6 +30,31 @@ class EventEmitterExt {
 
     /** @type {Map.<number, number>} */
     #listenersCountData = new Map;
+
+    #listenersAreRunning = false;
+
+    /** @type {number} */
+    #listenerRunnerStrategy = STRATEGY_ORDERED_BY_EVENTS;
+
+    /**
+     * Set the strategy for running listeners. The strategy is used to determine the order in which listeners are called.
+     * @param {number} strategy - The strategy to use. The following values are supported:
+     * 0 - Iterate over the listeners in the order they were registered .
+     * 1 - Iterate over listeners in the order they were registered, grouped by events.
+     */
+    setListenerRunnerStrategy(strategy) {
+        this.#listenerRunnerStrategy = strategy;
+    }
+
+    /**
+     * Get the strategy for running listeners. The strategy is used to determine the order in which listeners are called.
+     * @returns {number} - The strategy to use. The following values are supported:
+     * 0 - Iterate over the listeners in the order they were registered .
+     * 1 - Iterate over listeners in the order they were registered, grouped by events.
+     */
+    getListenerRunnerStrategy() {
+        return this.#listenerRunnerStrategy;
+    }
 
     /**
      * Register an event listener
@@ -67,17 +98,9 @@ class EventEmitterExt {
      */
     #attachListenerToEvent(event, listener_id) {
 
-        let listeners = this.#events.get(event);
-
-        if (listeners === undefined) {
-            return;
-        }
+        let listeners = this.#events.get(event) || new Set;
 
         listeners.add(listener_id);
-
-        if (!this.#listenersCountData.has(listener_id)) {
-            this.#listenersCountData.set(listener_id, 0);
-        }
 
         let count = this.#listenersCountData.get(listener_id) || 0;
         count++;
@@ -92,19 +115,11 @@ class EventEmitterExt {
      * @returns 
      */
     #detachListenerFromEvent(event, listener_id) {
-        let listeners = this.#events.get(event);
-
-        if (listeners === undefined) {
-            return;
-        }
+        let listeners = this.#events.get(event) || new Set;
 
         listeners.delete(listener_id);
 
-        if (!this.#listenersCountData.has(listener_id)) {
-            return;
-        }
-
-        let count = this.#listenersCountData.get(listener_id) || 0;
+        let count = this.#listenersCountData.get(listener_id) || 1;
         count--;
         this.#listenersCountData.set(listener_id, count);
 
@@ -117,14 +132,7 @@ class EventEmitterExt {
      */
     #removeListenerIfNotUsing(listener_id) {
 
-        if (!this.#listeners.has(listener_id)) {
-            return;
-        }
-
         let count = this.#listenersCountData.get(listener_id) || 0;
-        if (count === undefined) {
-            return;
-        }
 
         if (count == 0) {
             this.#removeListenerById(listener_id);
@@ -166,32 +174,45 @@ class EventEmitterExt {
             return;
         }
 
-        /** @type {Set<number>} */
-        let usedListeners = new Set();
+        this.#listenersAreRunning = true;
+
+        /** @type {Map<number, any[]>} */
+        let listenersRunData = new Map();
 
         this.#events.forEach((listeners, event) => {
 
             if (this.#scheduledEvents.has(event)) {
                 let args = this.#scheduledEvents.get(event) || [];
-
                 listeners.forEach((listener_id) => {
-                    let listener = this.#listeners.get(listener_id);
-
-                    if (listener === undefined) {
-                        return;
-                    }
-
-                    if (usedListeners.has(listener_id)) {
-                        return;
-                    }
-
-                    usedListeners.add(listener_id);
-                    listener(...args);
+                    listenersRunData.set(listener_id, args);
                 });
-
-                this.#scheduledEvents.delete(event);
             }
         });
+
+        this.#scheduledEvents.clear();
+
+        let orderedListenerIds = Array.from(listenersRunData.keys());
+
+        if (this.#listenerRunnerStrategy == STRATEGY_ORDERED_BY_LISTENER_ID) {
+            orderedListenerIds.sort((a, b) => {
+                return a - b
+            });
+        }
+
+        orderedListenerIds.forEach((listener_id) => {
+            let args = listenersRunData.get(listener_id) || [];
+            let listener = this.#listeners.get(listener_id);
+
+            try {
+                if (listener)
+                listener(...args);
+            }
+            catch (e) {
+                console.error(e);
+            }
+        });
+
+        this.#listenersAreRunning = false;
     }
 
     /**
@@ -279,14 +300,25 @@ class EventEmitterExt {
      * @returns {()=>void}
      */
     onAny(events, listener) {
+
+        if (this.autoRegister == true) {
+            this.registerEvents(...events);
+        }
+
+        let events_copy = Array.from(events).filter(event => this.#events.has(event));
+
+        if (events_copy.length == 0) {
+            return () => { };
+        }
+
         let listener_id = this.#registerListener(listener);
 
-        events.forEach((event) => {
+        events_copy.forEach((event) => {
             this.#attachListenerToEvent(event, listener_id);
         });
 
         return () => {
-            events.forEach((event) => {
+            events_copy.forEach((event) => {
                 this.#detachListenerFromEvent(event, listener_id);
             });
         };
@@ -320,7 +352,9 @@ class EventEmitterExt {
             return;
         }
 
-        this.#events.get(event).forEach((listener_id) => {
+        let listeners = this.#events.get(event) || new Set;
+
+        listeners.forEach((listener_id) => {
             this.#detachListenerFromEvent(event, listener_id);
         });
     }
@@ -349,7 +383,8 @@ class EventEmitterExt {
      * @returns {boolean} - Returns true if there are listeners for the event, false otherwise
      */
     hasListeners(event) {
-        return this.#events.has(event) && this.#events.get(event).size > 0;
+        let listeners = this.#events.get(event) || new Set;
+        return listeners.size > 0;
     }
 
     /**
@@ -358,11 +393,7 @@ class EventEmitterExt {
      * @returns {number} - The number of listeners for the event
      */
     getNumberOfListeners(event) {
-        let eventData = this.#events.get(event);
-        if (eventData === undefined) {
-            return 0;
-        }
-
+        let eventData = this.#events.get(event) || new Set;
         return eventData.size;
     }
 
@@ -372,13 +403,16 @@ class EventEmitterExt {
      * @param {any[]} args
      */
     emit(event, ...args) {
+        if (this.#listenersAreRunning) {
+            throw new Error("Cannot call emit while listeners are running");
+        }
+
         if (!this.#events.has(event)) {
             return;
         }
 
         if (this.#muted) {
             this.#scheduledEvents.set(event, args);
-            return;
         } else {
             this.#emit(event, ...args);
         }
@@ -391,22 +425,18 @@ class EventEmitterExt {
      */
     #emit(event, ...args) {
 
-        let listeners = this.#events.get(event);
+        let listeners = this.#events.get(event) || new Set();
 
-        if (listeners === undefined) {
-            return;
-        }
+        this.#listenersAreRunning = true;
 
         listeners.forEach((listener_id) => {
             try {
-
                 let listener = this.#listeners.get(listener_id);
 
-                if (listener === undefined) {
-                    return;
+                if (listener) {
+                    listener(...args);
                 }
 
-                listener.apply(this, args);
             }
             catch (e) {
                 console.error(event, args);
@@ -415,6 +445,7 @@ class EventEmitterExt {
 
         });
 
+        this.#listenersAreRunning = false;
     }
 
     /**
@@ -423,12 +454,22 @@ class EventEmitterExt {
      * @param {any[]} args - Arguments to pass to the event listeners
      */
     emitMany(events, ...args) {
-        this.#events.forEach((listeners, event) => {
-            let ev = /** @type {T} */ (event);
-            if (events.includes(ev)) {
-                this.emit(ev, ...args);
+
+        if (this.#listenersAreRunning) {
+            throw new Error("Cannot call emitMany while listeners are running");
+        }
+
+        events.forEach((event) => {
+            if (!this.#events.has(event)) {
+                return;
             }
+
+            this.#scheduledEvents.set(event, args);
         });
+
+        if (!this.#muted) {
+            this.#runScheduledEvents();
+        }
     }
 
     /**

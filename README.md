@@ -32,6 +32,8 @@ $ npm install @supercat1337/event-emitter-ext
  - mute() - Mute the event emitter, preventing events from being triggered.
  - unmute() - Unmute the event emitter, allowing events to be triggered.
  - isMuted() - Check if the event emitter is muted.
+ - setListenerRunnerStrategy(strategy) - Set the strategy for running listeners. The strategy is used to determine the order in which listeners are called. The following values are supported: 0 - Iterate over the listeners in the order they were registered . 1 - Iterate over listeners in the order they were registered, grouped by events.
+ - getListenerRunnerStrategy() - Get the strategy for running listeners. The strategy is used to determine the order in which listeners are called. The following values are supported: 0 - Iterate over the listeners in the order they were registered . 1 - Iterate over listeners in the order they were registered, grouped by events.
 
 
 ### Properties
@@ -129,6 +131,51 @@ emitter.emit('myEvent', 'hello', 'world');
 
 // Emit the event again (will not trigger the listener)
 emitter.emit('myEvent', 'hello', 'world');
+```
+
+**Advanced Usage**
+```javascript
+import { EventEmitterExt, STRATEGY_ORDERED_BY_EVENTS, STRATEGY_ORDERED_BY_LISTENER_ID } from '@supercat1337/event-emitter-ext';
+
+const emitter = new EventEmitterExt();
+
+// Register an event
+emitter.registerEvents('a', 'b', 'c');
+
+// Add a listeners
+emitter.on('c', () => { 
+    console.log('c');
+})
+
+emitter.on('b', () => {
+    console.log('b');
+});
+
+emitter.on('a', () => {
+    console.log('a');
+});
+
+// Set the strategy
+emitter.setListenerRunnerStrategy(STRATEGY_ORDERED_BY_LISTENER_ID);
+
+// Emit the events
+emitter.emitMany(['a', 'b', 'c']);
+
+// output:
+// c
+// b
+// a
+
+// Set the strategy
+emitter.setListenerRunnerStrategy(STRATEGY_ORDERED_BY_EVENTS);
+
+// Emit the events
+emitter.emitMany(['a', 'b', 'c']);
+
+// output:
+// a
+// b
+// c
 ```
 
 These examples demonstrate the basic usage of the `EventEmitterExt` class, as well as its advanced features like muting, waiting for events, and one-time listeners.

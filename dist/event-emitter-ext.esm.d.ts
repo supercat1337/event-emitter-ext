@@ -1,10 +1,23 @@
-/** @module EventEmitterExt */
 /**
  * @template {string} T
  */
 export class EventEmitterExt<T extends string> {
     /** @type {boolean} */
     autoRegister: boolean;
+    /**
+     * Set the strategy for running listeners. The strategy is used to determine the order in which listeners are called.
+     * @param {number} strategy - The strategy to use. The following values are supported:
+     * 0 - Iterate over the listeners in the order they were registered .
+     * 1 - Iterate over listeners in the order they were registered, grouped by events.
+     */
+    setListenerRunnerStrategy(strategy: number): void;
+    /**
+     * Get the strategy for running listeners. The strategy is used to determine the order in which listeners are called.
+     * @returns {number} - The strategy to use. The following values are supported:
+     * 0 - Iterate over the listeners in the order they were registered .
+     * 1 - Iterate over listeners in the order they were registered, grouped by events.
+     */
+    getListenerRunnerStrategy(): number;
     /**
      * Set the event emitter to a muted state. While muted, any calls to emit or emitMany
      * will not trigger any event listeners. Instead, the events and their arguments will be
@@ -118,4 +131,7 @@ export class EventEmitterExt<T extends string> {
     waitForAnyEvent(events: T[], max_wait_ms?: number): Promise<boolean>;
     #private;
 }
+export const STRATEGY_ORDERED_BY_EVENTS: 1;
+/** @module EventEmitterExt */
+export const STRATEGY_ORDERED_BY_LISTENER_ID: 0;
 //# sourceMappingURL=event-emitter-ext.esm.d.ts.map
