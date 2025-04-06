@@ -129,6 +129,17 @@ export class EventEmitterExt<T extends string> {
      * @returns {Promise<boolean>} - Resolves with true if any event was emitted, false if the time ran out.
      */
     waitForAnyEvent(events: T[], max_wait_ms?: number): Promise<boolean>;
+    /**
+     * Get the listeners for a specific event
+     * @param {T} event - The event to get the listeners for
+     * @returns {Function[]} - An array of the listeners for the event
+     */
+    getListeners(event: T): Function[];
+    /**
+     * Get the names of all events that have been registered.
+     * @returns {string[]} - An array of the names of all events that have been registered.
+     */
+    getEventNames(): string[];
     #private;
 }
 export const STRATEGY_ORDERED_BY_EVENTS: 1;

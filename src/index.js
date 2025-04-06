@@ -1,7 +1,6 @@
 // @ts-check
 /** @module EventEmitterExt */
 
-
 // STRATEGY_ORDERED_BY_LISTENER_ID  - Iterate over the listeners in the order they were registered .
 // STRATEGY_ORDERED_BY_EVENTS - Iterate over listeners in the order they were registered, grouped by events.
 export const STRATEGY_ORDERED_BY_LISTENER_ID = 0;
@@ -11,9 +10,8 @@ export const STRATEGY_ORDERED_BY_EVENTS = 1;
  * @template {string} T
  */
 class EventEmitterExt {
-
     /** @type {Map.<string, Set<number>>} */
-    #events = new Map;
+    #events = new Map();
 
     #muted = false;
 
@@ -21,15 +19,15 @@ class EventEmitterExt {
     autoRegister = false;
 
     /** @type {Map.<string, Array<any>>} */
-    #scheduledEvents = new Map;
+    #scheduledEvents = new Map();
 
     #lastListenerId = -1;
 
     /** @type {Map.<number, Function>} */
-    #listeners = new Map;
+    #listeners = new Map();
 
     /** @type {Map.<number, number>} */
-    #listenersCountData = new Map;
+    #listenersCountData = new Map();
 
     #listenersAreRunning = false;
 
@@ -58,7 +56,7 @@ class EventEmitterExt {
 
     /**
      * Register an event listener
-     * @param {Function} func 
+     * @param {Function} func
      * @returns {number} - Listener ID
      */
     #registerListener(func) {
@@ -70,7 +68,7 @@ class EventEmitterExt {
 
     /**
      * Remove an event listener by ID
-     * @param {number} id 
+     * @param {number} id
      */
     #removeListenerById(id) {
         this.#listeners.delete(id);
@@ -78,7 +76,7 @@ class EventEmitterExt {
 
     /**
      * Get the listener ID by function
-     * @param {Function} func 
+     * @param {Function} func
      * @returns {number} - Listener ID. -1 if not found
      */
     #getListenerIdByFunc(func) {
@@ -97,8 +95,7 @@ class EventEmitterExt {
      * @param {number} listener_id
      */
     #attachListenerToEvent(event, listener_id) {
-
-        let listeners = this.#events.get(event) || new Set;
+        let listeners = this.#events.get(event) || new Set();
 
         listeners.add(listener_id);
 
@@ -109,13 +106,13 @@ class EventEmitterExt {
     }
 
     /**
-     * 
-     * @param {T} event 
-     * @param {number} listener_id 
-     * @returns 
+     *
+     * @param {T} event
+     * @param {number} listener_id
+     * @returns
      */
     #detachListenerFromEvent(event, listener_id) {
-        let listeners = this.#events.get(event) || new Set;
+        let listeners = this.#events.get(event) || new Set();
 
         listeners.delete(listener_id);
 
@@ -131,7 +128,6 @@ class EventEmitterExt {
      * @param {number} listener_id
      */
     #removeListenerIfNotUsing(listener_id) {
-
         let count = this.#listenersCountData.get(listener_id) || 0;
 
         if (count == 0) {
@@ -139,7 +135,6 @@ class EventEmitterExt {
             this.#listenersCountData.delete(listener_id);
             return;
         }
-
     }
 
     /**
@@ -169,7 +164,6 @@ class EventEmitterExt {
     }
 
     #runScheduledEvents() {
-
         if (this.#scheduledEvents.size === 0) {
             return;
         }
@@ -180,7 +174,6 @@ class EventEmitterExt {
         let listenersRunData = new Map();
 
         this.#events.forEach((listeners, event) => {
-
             if (this.#scheduledEvents.has(event)) {
                 let args = this.#scheduledEvents.get(event) || [];
                 listeners.forEach((listener_id) => {
@@ -195,7 +188,7 @@ class EventEmitterExt {
 
         if (this.#listenerRunnerStrategy == STRATEGY_ORDERED_BY_LISTENER_ID) {
             orderedListenerIds.sort((a, b) => {
-                return a - b
+                return a - b;
             });
         }
 
@@ -204,10 +197,8 @@ class EventEmitterExt {
             let listener = this.#listeners.get(listener_id);
 
             try {
-                if (listener)
-                listener(...args);
-            }
-            catch (e) {
+                if (listener) listener(...args);
+            } catch (e) {
                 console.error(e);
             }
         });
@@ -216,7 +207,7 @@ class EventEmitterExt {
     }
 
     /**
-     * Register events to be emitted. This should be called before any other methods on this class. 
+     * Register events to be emitted. This should be called before any other methods on this class.
      * The order of the events in the `events` array determines the order in which the event listeners are triggered.
      * This method can be called multiple times to register multiple events.
      * @param {T[]} events - Array of events to register
@@ -226,7 +217,7 @@ class EventEmitterExt {
             if (!this.#events.has(event)) {
                 this.#events.set(event, new Set());
             }
-        })
+        });
     }
 
     /**
@@ -235,7 +226,6 @@ class EventEmitterExt {
      */
     unregisterEvents(...events) {
         events.forEach((event) => {
-
             if (!this.#events.has(event)) {
                 return;
             }
@@ -249,8 +239,7 @@ class EventEmitterExt {
 
                 this.#events.delete(event);
             }
-
-        })
+        });
     }
 
     unregisterAllEvents() {
@@ -267,15 +256,12 @@ class EventEmitterExt {
      * @returns {()=>void}
      */
     on(event, listener) {
-
-        const emptyFunction = () => { };
+        const emptyFunction = () => {};
 
         if (this.autoRegister == false) {
-
             if (!this.#events.has(event)) {
                 return emptyFunction;
             }
-
         } else {
             this.registerEvents(event);
         }
@@ -300,15 +286,16 @@ class EventEmitterExt {
      * @returns {()=>void}
      */
     onAny(events, listener) {
-
         if (this.autoRegister == true) {
             this.registerEvents(...events);
         }
 
-        let events_copy = Array.from(events).filter(event => this.#events.has(event));
+        let events_copy = Array.from(events).filter((event) =>
+            this.#events.has(event)
+        );
 
         if (events_copy.length == 0) {
-            return () => { };
+            return () => {};
         }
 
         let listener_id = this.#registerListener(listener);
@@ -352,7 +339,7 @@ class EventEmitterExt {
             return;
         }
 
-        let listeners = this.#events.get(event) || new Set;
+        let listeners = this.#events.get(event) || new Set();
 
         listeners.forEach((listener_id) => {
             this.#detachListenerFromEvent(event, listener_id);
@@ -383,7 +370,7 @@ class EventEmitterExt {
      * @returns {boolean} - Returns true if there are listeners for the event, false otherwise
      */
     hasListeners(event) {
-        let listeners = this.#events.get(event) || new Set;
+        let listeners = this.#events.get(event) || new Set();
         return listeners.size > 0;
     }
 
@@ -393,7 +380,7 @@ class EventEmitterExt {
      * @returns {number} - The number of listeners for the event
      */
     getNumberOfListeners(event) {
-        let eventData = this.#events.get(event) || new Set;
+        let eventData = this.#events.get(event) || new Set();
         return eventData.size;
     }
 
@@ -424,7 +411,6 @@ class EventEmitterExt {
      * @param {any[]} args
      */
     #emit(event, ...args) {
-
         let listeners = this.#events.get(event) || new Set();
 
         this.#listenersAreRunning = true;
@@ -436,13 +422,10 @@ class EventEmitterExt {
                 if (listener) {
                     listener(...args);
                 }
-
-            }
-            catch (e) {
+            } catch (e) {
                 console.error(event, args);
                 console.error(e);
             }
-
         });
 
         this.#listenersAreRunning = false;
@@ -454,7 +437,6 @@ class EventEmitterExt {
      * @param {any[]} args - Arguments to pass to the event listeners
      */
     emitMany(events, ...args) {
-
         if (this.#listenersAreRunning) {
             throw new Error("Cannot call emitMany while listeners are running");
         }
@@ -489,7 +471,6 @@ class EventEmitterExt {
         return unsubscriber;
     }
 
-
     /**
      * Wait for an event to be emitted
      * @param {T} event
@@ -497,12 +478,10 @@ class EventEmitterExt {
      * @returns {Promise<boolean>} - Resolves with true if the event was emitted, false if the time ran out.
      */
     waitForEvent(event, max_wait_ms = 0) {
-
         return new Promise((resolve) => {
             let timeout;
 
             let unsubscriber = this.on(event, () => {
-
                 if (max_wait_ms > 0) {
                     clearTimeout(timeout);
                 }
@@ -516,12 +495,9 @@ class EventEmitterExt {
                     unsubscriber();
                     resolve(false);
                 }, max_wait_ms);
-
             }
-
         });
     }
-
 
     /**
      * Wait for any of the specified events to be emitted
@@ -530,7 +506,6 @@ class EventEmitterExt {
      * @returns {Promise<boolean>} - Resolves with true if any event was emitted, false if the time ran out.
      */
     waitForAnyEvent(events, max_wait_ms = 0) {
-
         return new Promise((resolve) => {
             let timeout;
 
@@ -558,10 +533,39 @@ class EventEmitterExt {
                     main_unsubscriber();
                     resolve(false);
                 }, max_wait_ms);
-
             }
-
         });
+    }
+
+    /**
+     * Get the listeners for a specific event
+     * @param {T} event - The event to get the listeners for
+     * @returns {Function[]} - An array of the listeners for the event
+     */
+    getListeners(event) {
+        if (!this.#events.has(event)) {
+            return [];
+        }
+
+        let listeners_id = this.#events.get(event) || new Set();
+        let listeners = [];
+
+        listeners_id.forEach((listener_id) => {
+            let listener = this.#listeners.get(listener_id);
+            if (listener) {
+                listeners.push(listener);
+            }
+        });
+
+        return listeners;
+    }
+
+    /**
+     * Get the names of all events that have been registered.
+     * @returns {string[]} - An array of the names of all events that have been registered.
+     */
+    getEventNames() {
+        return Array.from(this.#events.keys());
     }
 }
 
