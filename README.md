@@ -44,6 +44,8 @@ $ npm install @supercat1337/event-emitter-ext
 ### Properties
 
 -   autoRegister - Set to true to automatically register events when they are emitted.
+-   name - The name of the event emitter.
+-   noLimitsToEmit - Set to true to disable the limit to emitting events while listeners are running.
 
 ### Usage
 

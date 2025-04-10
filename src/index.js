@@ -34,6 +34,12 @@ class EventEmitterExt {
     /** @type {number} */
     #listenerRunnerStrategy = STRATEGY_ORDERED_BY_EVENTS;
 
+    /** @type {boolean} */
+    noLimitsToEmit = false;
+
+    /** @type {string} */
+    name = "";
+
     /**
      * Set the strategy for running listeners. The strategy is used to determine the order in which listeners are called.
      * @param {number} strategy - The strategy to use. The following values are supported:
@@ -390,9 +396,20 @@ class EventEmitterExt {
      * @param {any[]} args
      */
     emit(event, ...args) {
-        if (this.#listenersAreRunning) {
-            throw new Error("Cannot call emit while listeners are running");
+        //*
+        if (!this.noLimitsToEmit && this.#listenersAreRunning) {
+            throw new Error(
+                `Cannot emit event ${event} while listeners are running`,
+                // @ts-ignore
+                {
+                    cause: {
+                        name: this.name,
+                        events: Array.from(this.#events.keys()),
+                    },
+                }
+            );
         }
+        //*/
 
         if (!this.#events.has(event)) {
             return;
@@ -416,15 +433,22 @@ class EventEmitterExt {
         this.#listenersAreRunning = true;
 
         listeners.forEach((listener_id) => {
+            let listener = this.#listeners.get(listener_id);
             try {
-                let listener = this.#listeners.get(listener_id);
-
                 if (listener) {
                     listener(...args);
                 }
             } catch (e) {
-                console.error(event, args);
-                console.error(e);
+                console.error(
+                    `\n\nEventEmitterExt (name = ${this.name}): Exception in listener for event ${event}`,
+                    "\nerror:",
+                    e,
+                    "\nargs: ",
+                    args,
+                    "\nlistener:",
+                    listener?.toString(),
+                    "\n\n"
+                );
             }
         });
 
@@ -463,7 +487,7 @@ class EventEmitterExt {
     once(event, listener) {
         let that = this;
 
-        let unsubscriber = this.on(event, function () {
+        let unsubscriber = this.on(event, () => {
             unsubscriber();
             listener.apply(that, arguments);
         });

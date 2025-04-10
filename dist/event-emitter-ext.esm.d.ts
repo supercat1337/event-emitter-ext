@@ -4,6 +4,10 @@
 export class EventEmitterExt<T extends string> {
     /** @type {boolean} */
     autoRegister: boolean;
+    /** @type {boolean} */
+    noLimitsToEmit: boolean;
+    /** @type {string} */
+    name: string;
     /**
      * Set the strategy for running listeners. The strategy is used to determine the order in which listeners are called.
      * @param {number} strategy - The strategy to use. The following values are supported:
